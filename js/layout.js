@@ -128,28 +128,25 @@ export const SHOPS = [
 ];
 
 // ------------------------------------------------------------
-// 住宅：西片 & 东片（参数化：层数/屋顶/墙色/朝向/烟囱/花箱）
+// 住宅：三片住宅区（西片 / 东片 / 河南邨），栋间距 ≥12 格 + 每栋院子
+// yard: 院子风格（builders/yard.js 消费）picket|garden|orchard|waterside|minimal
+// 坐标经过 tools/layoutcheck.mjs 校验：互相不叠、不压路/河/桥/公园
 // ------------------------------------------------------------
 export const HOUSES = [
-  // 西片（x ∈ [-44,-28]，z ∈ [-16,4]）
-  { x: -38, z: -14, rot: 90,  floors: 1, roof: 'gable',  wall: 'wallCream', roofC: 'roofRed',   chimney: true,  flower: true },
-  { x: -32, z: -8,  rot: 90,  floors: 2, roof: 'gable',  wall: 'wallBrick', roofC: 'roofBlue',  chimney: true,  flower: false },
-  { x: -40, z: -2,  rot: 0,   floors: 1, roof: 'hip',    wall: 'wallWood',  roofC: 'roofGreen', chimney: true,  flower: true },
-  { x: -33, z: 3,   rot: 180, floors: 2, roof: 'flat',   wall: 'wallPlum',  roofC: 'roofDark',  chimney: false, flower: true, terrace: true },
-  { x: -44, z: -20, rot: 45,  floors: 1, roof: 'gable',  wall: 'wallCream', roofC: 'roofGreen', chimney: true,  flower: false },
-  { x: -29, z: -18, rot: 135, floors: 2, roof: 'gable',  wall: 'wallSlate', roofC: 'roofRed',   chimney: true,  flower: true },
-  // 东片（x ∈ [28,44]，z ∈ [-16,4]）
-  { x: 38, z: -14, rot: -90, floors: 2, roof: 'gable',  wall: 'wallBrick', roofC: 'roofGreen', chimney: true,  flower: true },
-  { x: 32, z: -8,  rot: -90, floors: 1, roof: 'hip',    wall: 'wallCream', roofC: 'roofBlue',  chimney: true,  flower: false },
-  { x: 41, z: -1,  rot: 180, floors: 1, roof: 'gable',  wall: 'wallPlum',  roofC: 'roofRed',   chimney: true,  flower: true },
-  { x: 30, z: 2,   rot: 0,   floors: 2, roof: 'flat',   wall: 'wallSlate', roofC: 'roofDark',  chimney: false, flower: true, terrace: true },
-  { x: 44, z: -20, rot: -45, floors: 1, roof: 'gable',  wall: 'wallWood',  roofC: 'roofBlue',  chimney: true,  flower: false },
-  { x: 28, z: 20,  rot: -90, floors: 1, roof: 'hip',    wall: 'wallCream', roofC: 'roofRed',   chimney: true,  flower: true }, // 河南岸小屋
-  { x: -28, z: 20, rot: 90,  floors: 1, roof: 'gable',  wall: 'wallBrick', roofC: 'roofGreen', chimney: true,  flower: true }, // 河南岸小屋
-  // 南公园边（夜里听火车的那种房子）
-  { x: -44, z: 22, rot: 0,   floors: 1, roof: 'gable',  wall: 'wallCream', roofC: 'roofBlue',  chimney: true,  flower: true },
-  { x: 40,  z: 30, rot: 180, floors: 2, roof: 'hip',    wall: 'wallPlum',  roofC: 'roofRed',   chimney: true,  flower: false },
-  { x: 34,  z: 6,  rot: -90, floors: 1, roof: 'gable',  wall: 'wallSlate', roofC: 'roofGreen', chimney: false, flower: true }, // 河北岸木匠屋
+  // —— 西片（环路外西侧，北坡脚下）——
+  { x: -36,  z: -27, rot: 45,  floors: 1, roof: 'gable', wall: 'wallBrick',  roofC: 'roofBlue',  chimney: true,  flower: false, yard: 'garden' },
+  { x: -44,  z: -17, rot: 90,  floors: 1, roof: 'gable', wall: 'wallWood',   roofC: 'roofGreen', chimney: true,  flower: true,  yard: 'picket' },
+  { x: -36,  z: -8,  rot: 90,  floors: 2, roof: 'gable', wall: 'wallSlate',  roofC: 'roofRed',   chimney: true,  flower: true,  yard: 'picket' },
+  { x: -43.5, z: 2.5, rot: 180, floors: 2, roof: 'flat',  wall: 'wallPlum',   roofC: 'roofDark',  chimney: false, flower: true,  terrace: true, yard: 'minimal' },
+  // —— 东片（环路外东侧）——
+  { x: 42,   z: -28, rot: -45, floors: 1, roof: 'gable', wall: 'wallCream',  roofC: 'roofBlue',  chimney: true,  flower: true,  yard: 'orchard' },
+  { x: 44,   z: -16, rot: -90, floors: 2, roof: 'gable', wall: 'wallBrick',  roofC: 'roofGreen', chimney: true,  flower: false, yard: 'picket' },
+  { x: 34,   z: -9,  rot: -90, floors: 2, roof: 'gable', wall: 'wallCream',  roofC: 'roofRed',   chimney: true,  flower: true,  yard: 'garden' },
+  { x: 43.5, z: 2,   rot: 180, floors: 1, roof: 'hip',   wall: 'wallSlate',  roofC: 'roofGreen', chimney: true,  flower: true,  yard: 'orchard' },
+  // —— 河南邨（南岸滨水；观星亭四周留空，公园完整）——
+  { x: -44,  z: 30,  rot: 90,  floors: 1, roof: 'gable', wall: 'wallWood',   roofC: 'roofRed',   chimney: true,  flower: true,  yard: 'garden' },
+  { x: 35,   z: 26,  rot: -90, floors: 1, roof: 'gable', wall: 'wallCream',  roofC: 'roofBlue',  chimney: true,  flower: true,  yard: 'waterside' },
+  { x: 44,   z: 34,  rot: 180, floors: 1, roof: 'hip',   wall: 'wallSlate',  roofC: 'roofGreen', chimney: true,  flower: false, yard: 'orchard' },
 ];
 
 // ------------------------------------------------------------
@@ -158,15 +155,15 @@ export const HOUSES = [
 export const MILL = { x: -26, z: -38, groundY: 5.2 };
 export const BARN = { x: -13, z: -36, groundY: 4.2 };
 export const WATERTOWER = { x: 30, z: -40, groundY: 5.6 };
-export const WHEAT_FIELD = { x0: -42, z0: -46, x1: -6, z1: -30 };  // 麦田矩形（坡上）
+export const WHEAT_FIELD = { x0: -42, z0: -46, x1: -6, z1: -33 };  // 麦田矩形（坡上；南缘给坡脚宅让位）
 export const PAVILION = { x: -22, z: 28 };   // 南公园观星亭
 export const SWING = { x: -16, z: 30 };      // 秋千架
-export const ORCHARD = { x0: 10, z0: 24, x1: 32, z1: 36, rows: 3, cols: 5 }; // 果树阵列
+export const ORCHARD = { x0: 10, z0: 24, x1: 26, z1: 36, rows: 3, cols: 5 }; // 果树阵列（西侧给滨水宅让位）
 
 // 南公园深化（park.js 消费）
 export const PARK = {
-  vegetable: { x0: -40, z0: 22, x1: -30, z1: 32, rows: 4 }, // 菜畦（稻草人守着）
-  scarecrow: { x: -35, z: 26 },
+  vegetable: { x0: -38, z0: 22, x1: -34, z1: 32, rows: 4 }, // 菜畦（缩到西侧一垄，给滨水宅让位）
+  scarecrow: { x: -36, z: 26 },
   kite: { anchorX: -6, anchorZ: 30 },       // 风筝（线从这里放飞）
   picnic: [{ x: -12, z: 24 }, { x: 8, z: 28 }], // 野餐垫
   slide: { x: 2, z: 30 },                   // 滑梯

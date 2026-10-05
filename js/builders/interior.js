@@ -358,3 +358,207 @@ export function deskRabbit(x, y, z, rot = 0) {
   vox.boxC(0, 0.1, 0.5, 0.14, 0.14, 0.5, 'awningCream');       // 圆尾
   vox.popTransform();
 }
+
+// ============================================================
+// 民宅家具（house.js 内景消费）
+// ============================================================
+
+/** 摇椅（弧形底轨 + 高背，靠 -z 墙摆最 cozy） */
+export function rockingChair(x, z, { rot = 0, c = 'woodMid' } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  // 座 + 靠背（横板条）
+  vox.boxC(-0.45, 0.55, -0.4, 0.9, 0.14, 0.85, c);
+  for (let i = 0; i < 3; i++) vox.boxC(-0.45, 0.72 + i * 0.3, -0.62, 0.9, 0.14, 0.1, c);
+  vox.boxC(-0.45, 1.72, -0.66, 0.9, 0.16, 0.2, c);               // 顶枕
+  // 扶手 + 前后腿
+  vox.boxC(-0.52, 0.72, -0.1, 0.1, 0.5, 0.6, c);
+  vox.boxC(0.42, 0.72, -0.1, 0.1, 0.5, 0.6, c);
+  // 弧形滑轨（两段阶梯近似弧）
+  for (const sx of [-0.5, 0.4]) {
+    vox.boxC(sx, 0.06, -0.5, 0.12, 0.16, 0.36, 'woodDark');
+    vox.boxC(sx, 0.0, -0.2, 0.12, 0.12, 0.7, 'woodDark');
+    vox.boxC(sx, 0.06, 0.22, 0.12, 0.16, 0.36, 'woodDark');
+  }
+  // 搭在扶手上的小毯子
+  vox.boxC(0.42, 0.98, -0.1, 0.26, 0.08, 0.62, 'clothC');
+  vox.popTransform();
+}
+
+/** 厨房台（贴墙：台面+水槽+双灶眼+墙上吊柜） */
+export function kitchenCounter(x, z, { rot = 0, len = 3.2 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-len / 2, 0, -0.42, len, 1.0, 0.84, 'wallSlate');    // 柜身
+  vox.boxC(-len / 2 - 0.06, 1.0, -0.48, len + 0.12, 0.14, 0.96, 'awningCream'); // 台面
+  // 水槽（左）+ 龙头
+  vox.boxC(-len / 2 + 0.3, 1.0, -0.4, 0.9, 0.2, 0.6, 'metal');
+  vox.boxC(-len / 2 + 0.35, 1.2, -0.68, 0.1, 0.34, 0.1, 'metal');
+  vox.boxC(-len / 2 + 0.35, 1.5, -0.56, 0.1, 0.08, 0.34, 'metal');
+  // 双灶眼（右，微暖光）
+  for (const ox of [0.45, 1.15]) {
+    vox.boxC(-len / 2 + len - ox - 0.6, 1.06, -0.36, 0.62, 0.08, 0.62, 'roofDark');
+    vox.windowBox(-len / 2 + len - ox - 0.6, 1.12, -0.36, 0.44, 0.05, 0.44, 'winWarm');
+  }
+  // 墙上吊柜 + 搁板
+  vox.boxC(-len / 2 + 0.2, 2.1, -0.66, len - 1.4, 0.9, 0.4, 'woodMid');
+  vox.boxC(-len / 2 + 0.3, 2.25, -0.44, len - 1.6, 0.6, 0.1, 'roofDark'); // 柜门缝
+  // 灶上小锅
+  vox.boxC(-len / 2 + len - 1.05, 1.16, -0.36, 0.42, 0.22, 0.42, 'metal');
+  vox.popTransform();
+}
+
+/** 碗柜（双层玻璃门 + 摆着的碗碟） */
+export function cupboard(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-0.7, 0, -0.35, 1.4, 0.8, 0.7, 'woodMid');           // 下柜
+  vox.boxC(-0.6, 0.12, 0.01, 1.2, 0.56, 0.06, 'woodDark');      // 门缝
+  vox.boxC(-0.75, 0.8, -0.38, 1.5, 0.14, 0.76, 'woodDark');     // 腰线
+  vox.boxC(-0.7, 0.94, -0.35, 1.4, 1.15, 0.7, 'woodMid');       // 上柜
+  // 玻璃门里露出的碗碟
+  vox.boxC(-0.55, 1.08, 0.01, 0.5, 0.8, 0.08, 'star');
+  vox.boxC(0.05, 1.08, 0.01, 0.5, 0.8, 0.08, 'star');
+  for (let i = 0; i < 3; i++) {
+    vox.boxC(-0.5 + i * 0.42, 1.2 + (i % 2) * 0.06, -0.12, 0.3, 0.16, 0.3, 'awningCream');
+    vox.boxC(-0.5 + i * 0.42, 1.42 + (i % 2) * 0.06, -0.12, 0.24, 0.12, 0.24, 'clothC');
+  }
+  vox.boxC(-0.78, 2.09, -0.38, 1.56, 0.12, 0.76, 'woodDark');   // 顶檐
+  vox.popTransform();
+}
+
+/** 书桌（摊开的书 + 烛台 + 墨水瓶） */
+export function desk(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-0.9, 0.86, -0.45, 1.8, 0.14, 0.9, 'woodMid');
+  vox.boxC(-0.78, 0, -0.4, 0.16, 0.86, 0.16, 'woodDark');
+  vox.boxC(0.62, 0, -0.4, 0.16, 0.86, 0.16, 'woodDark');
+  vox.boxC(-0.78, 0, 0.28, 0.16, 0.86, 0.16, 'woodDark');
+  vox.boxC(0.62, 0, 0.28, 0.16, 0.86, 0.16, 'woodDark');
+  // 抽屉柜（右侧两抽）
+  vox.boxC(0.32, 0, -0.42, 0.56, 0.86, 0.84, 'woodMid');
+  vox.boxC(0.38, 0.18, 0.01, 0.44, 0.26, 0.06, 'woodDark');
+  vox.boxC(0.38, 0.52, 0.01, 0.44, 0.26, 0.06, 'woodDark');
+  // 摊开的书（两页）+ 压书镇
+  vox.boxC(-0.42, 1.0, -0.1, 0.44, 0.06, 0.6, 'awningCream');
+  vox.boxC(-0.5, 1.0, -0.1, 0.12, 0.08, 0.6, 'flowerRed');
+  vox.boxC(0.02, 1.0, -0.1, 0.12, 0.08, 0.6, 'flowerRed');
+  vox.boxC(0.3, 1.03, 0.1, 0.14, 0.1, 0.14, 'clothB');
+  // 烛台（发光）
+  vox.boxC(-0.7, 1.0, 0.12, 0.16, 0.3, 0.16, 'metal');
+  vox.windowBox(-0.7, 1.32, 0.12, 0.13, 0.26, 0.13, 'winWarm');
+  // 墨水 + 笔
+  vox.boxC(-0.62, 1.0, -0.2, 0.12, 0.14, 0.12, 'roofDark');
+  vox.boxC(-0.55, 1.14, -0.22, 0.05, 0.24, 0.05, 'woodDark');
+  vox.popTransform();
+}
+
+/** 落地灯（弧杆 + 灯罩 + 暖光） */
+export function floorLamp(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-0.4, 0, -0.4, 0.8, 0.14, 0.8, 'metal');   // 底盘
+  vox.boxC(-0.07, 0.14, -0.07, 0.14, 2.1, 0.14, 'metal'); // 杆
+  vox.boxC(-0.32, 2.24, -0.32, 0.64, 0.5, 0.64, 'awningRed'); // 灯罩
+  vox.windowBox(0, 2.3, 0, 0.4, 0.28, 0.4, 'winWarm');
+  vox.popTransform();
+}
+
+/** 床头柜（蜡烛 + 小书 + 抽屉） */
+export function bedsideTable(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-0.4, 0, -0.4, 0.8, 0.66, 0.8, 'woodMid');
+  vox.boxC(-0.34, 0.3, 0.01, 0.68, 0.24, 0.06, 'woodDark');
+  vox.boxC(-0.06, 0.44, 0.01, 0.12, 0.05, 0.04, 'metal');
+  vox.boxC(-0.4, 0.66, -0.4, 0.8, 0.1, 0.8, 'woodDark');
+  // 蜡烛 + 烛碟
+  vox.boxC(-0.16, 0.76, -0.14, 0.24, 0.04, 0.24, 'metal');
+  vox.boxC(-0.16, 0.8, -0.14, 0.12, 0.34, 0.12, 'awningCream');
+  vox.windowBox(-0.16, 1.16, -0.14, 0.09, 0.18, 0.09, 'winWarm');
+  // 摞起的小书×2
+  vox.boxC(0.16, 0.76, -0.1, 0.3, 0.08, 0.4, 'clothB');
+  vox.boxC(0.13, 0.84, -0.12, 0.26, 0.07, 0.34, 'clothC');
+  vox.popTransform();
+}
+
+/** 工作台（木匠屋：台面工具 + 木料 + 砂纸堆） */
+export function workbench(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-1.2, 0.9, -0.5, 2.4, 0.18, 1.0, 'woodLight');
+  vox.boxC(-1.05, 0, -0.44, 0.2, 0.9, 0.2, 'woodDark');
+  vox.boxC(0.85, 0, -0.44, 0.2, 0.9, 0.2, 'woodDark');
+  vox.boxC(-1.05, 0, 0.24, 0.2, 0.9, 0.2, 'woodDark');
+  vox.boxC(0.85, 0, 0.24, 0.2, 0.9, 0.2, 'woodDark');
+  // 下层搁板 + 木料
+  vox.boxC(-1.05, 0.3, -0.3, 2.1, 0.1, 0.6, 'woodMid');
+  vox.boxC(-0.7, 0.4, -0.15, 1.1, 0.18, 0.18, 'woodLight');
+  vox.boxC(-0.5, 0.58, -0.15, 0.8, 0.18, 0.18, 'woodMid');
+  // 台面：台钳 + 半成品 + 锤子
+  vox.boxC(-0.85, 1.08, -0.15, 0.3, 0.36, 0.3, 'metal');        // 台钳
+  vox.boxC(-0.85, 1.2, -0.32, 0.34, 0.14, 0.08, 'metal');
+  vox.boxC(0.1, 1.08, 0.05, 0.7, 0.16, 0.3, 'woodLight');       // 半成品木件
+  vox.boxC(0.75, 1.08, -0.2, 0.24, 0.14, 0.5, 'woodDark');      // 锤头
+  vox.boxC(0.75, 1.22, -0.2, 0.1, 0.3, 0.1, 'woodLight');       // 锤柄
+  vox.popTransform();
+}
+
+/** 墙上工具架（挂锯 + 锤 + 一排木钻） */
+export function toolRack(x, y, z) {
+  vox.boxC(x - 0.9, y, z, 1.8, 0.16, 0.3, 'woodMid');
+  // 手锯（斜挂）
+  vox.boxC(x - 0.55, y - 0.5, z + 0.05, 0.14, 0.7, 0.08, 'metal');
+  vox.boxC(x - 0.62, y - 0.9, z + 0.05, 0.28, 0.16, 0.1, 'woodDark');
+  // 锤子
+  vox.boxC(x - 0.1, y - 0.42, z + 0.05, 0.1, 0.6, 0.1, 'woodLight');
+  vox.boxC(x - 0.1, y - 0.78, z + 0.05, 0.26, 0.16, 0.16, 'metal');
+  // 三只木钻
+  for (let i = 0; i < 3; i++) {
+    vox.boxC(x + 0.3 + i * 0.22, y - 0.4, z + 0.05, 0.08, 0.56, 0.08, 'metal');
+  }
+}
+
+/** 婴儿床（围栏柱 + 小被子 + 悬顶小星星挂饰） */
+export function babyCrib(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  vox.boxC(-0.6, 0, -0.85, 1.2, 0.3, 1.7, 'woodMid');           // 底箱
+  // 四角立柱 + 顶部横杆
+  for (const [px, pz] of [[-0.55, -0.8], [0.45, -0.8], [-0.55, 0.7], [0.45, 0.7]]) {
+    vox.boxC(px, 0.3, pz, 0.14, 1.5, 0.14, 'woodMid');
+  }
+  vox.boxC(-0.6, 1.8, -0.85, 1.2, 0.1, 0.14, 'woodDark');
+  vox.boxC(-0.6, 1.8, 0.66, 1.2, 0.1, 0.14, 'woodDark');
+  // 围栏条
+  for (let i = 0; i < 4; i++) {
+    vox.boxC(-0.45 + i * 0.3, 0.3, -0.83, 0.08, 1.4, 0.08, 'woodLight');
+    vox.boxC(-0.45 + i * 0.3, 0.3, 0.68, 0.08, 1.4, 0.08, 'woodLight');
+  }
+  // 小被子 + 小枕头
+  vox.boxC(-0.5, 0.3, -0.2, 1.0, 0.16, 1.1, 'clothC');
+  vox.boxC(-0.45, 0.46, -0.72, 0.9, 0.12, 0.36, 'awningCream');
+  // 悬顶挂饰（三颗小星星，最低的一颗发光）
+  vox.boxC(-0.3, 2.0, -0.3, 0.04, 0.24, 0.04, 'metal');
+  vox.boxC(0.05, 2.0, -0.15, 0.04, 0.32, 0.04, 'metal');
+  vox.boxC(0.38, 2.0, -0.35, 0.04, 0.2, 0.04, 'metal');
+  vox.boxC(-0.36, 1.9, -0.36, 0.16, 0.16, 0.05, 'flowerYel');
+  vox.windowBox(-0.01, 1.8, -0.21, 0.16, 0.16, 0.05, 'starWarm');
+  vox.boxC(0.32, 1.92, -0.41, 0.16, 0.16, 0.05, 'flowerRed');
+  vox.popTransform();
+}
+
+/** 壁挂钟（小圆钟面 + 摆锤窗） */
+export function wallClock(x, y, z) {
+  vox.boxC(x - 0.4, y, z, 0.8, 0.8, 0.14, 'woodDark');
+  vox.boxC(x - 0.3, y + 0.1, z + 0.05, 0.6, 0.6, 0.06, 'awningCream');
+  vox.boxC(x - 0.06, y + 0.28, z + 0.09, 0.1, 0.18, 0.04, 'catBlack'); // 时针
+  vox.boxC(x - 0.04, y + 0.18, z + 0.09, 0.06, 0.3, 0.04, 'catBlack'); // 分针
+}
+
+/** 阶梯花架（三层盆栽，garden 风格民居用） */
+export function flowerStand(x, z, { rot = 0 } = {}) {
+  vox.pushTransform(x, 0, z, rot);
+  const cols = ['flowerRed', 'flowerYel', 'flowerBlu', 'flowerRed'];
+  for (let s = 0; s < 3; s++) {
+    const w = 1.6 - s * 0.4;
+    vox.boxC(-w / 2, s * 0.6, -0.3 + s * 0.28, w, 0.12, 0.5, 'woodMid');
+    const pot = 0.44 - s * 0.05;
+    vox.boxC(-w / 2 + pot / 2 + 0.06, s * 0.6 + 0.12, -0.06 + s * 0.28, pot, 0.3, pot, 'roofRed');
+    vox.boxC(-w / 2 + pot / 2 + 0.06, s * 0.6 + 0.42, -0.06 + s * 0.28, pot * 0.8, 0.26, pot * 0.8, cols[s]);
+  }
+  vox.popTransform();
+}

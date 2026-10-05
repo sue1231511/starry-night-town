@@ -28,10 +28,31 @@ export function setupInteraction({ scene, camera, renderer, controls, showPlaque
     if (openRoofGroup) vox.setGroupVisible(openRoofGroup, true);
     openRoofGroup = b.roofGroup || null;
     if (openRoofGroup) vox.setGroupVisible(openRoofGroup, false);
+    // 民居揭顶配一盏室内灯：家具在月光阴影里会黑成一团（像素 Lara 全靠它）
+    aimInteriorLight(b);
   }
   function closeInterior() {
     if (openRoofGroup) vox.setGroupVisible(openRoofGroup, true);
     openRoofGroup = null;
+    if (shopLight) shopLight.position.set(0, -100, 0);   // 挪走=熄灯
+    if (shopLight2) shopLight2.position.set(0, -100, 0);
+  }
+
+  /** 室内灯：建一次、永远挪着用（真进店/揭顶共用） */
+  function ensureInteriorLights() {
+    if (!shopLight) {
+      shopLight = new THREE.PointLight(0xffd8a0, 13, 18, 1.6);
+      scene.add(shopLight);
+      shopLight2 = new THREE.PointLight(0xffe8c0, 7, 12, 1.8);
+      scene.add(shopLight2);
+    }
+  }
+  /** 按建筑高度把灯挪到室内中央（民居没存朝向，居中即可照亮） */
+  function aimInteriorLight(b) {
+    ensureInteriorLights();
+    const h = (b.y1 ?? 6) - (b.y0 ?? 0);
+    shopLight.position.set(b.cx, (b.y0 ?? 0) + h * 0.45, b.cz);
+    shopLight2.position.set(b.cx, (b.y0 ?? 0) + h * 0.75, b.cz);
   }
 
   /** 真·进店：站门口、看店内陈设；按住拖拽转头（自写，绕开 OrbitControls——
@@ -55,18 +76,16 @@ export function setupInteraction({ scene, camera, renderer, controls, showPlaque
     shopPitch = -0.06;
     applyShopLook();
     if (keyboardEnabledRef) keyboardEnabledRef(false);
-    // 室内暖灯×2（店中心主灯 + 门口补光；进店亮，出门灭）
-    if (!shopLight) {
-      shopLight = new THREE.PointLight(0xffd8a0, 13, 18, 1.6);
-      scene.add(shopLight);
-      shopLight2 = new THREE.PointLight(0xffe8c0, 7, 12, 1.8);
-      scene.add(shopLight2);
-    }
-    shopLight.position.set(b.cx, b.y0 + 2.7, b.cz);
+    // 室内暖灯×2（真进店 / 揭顶共用；按建筑高度居中照亮）
+    ensureInteriorLights();
+    const h = (b.y1 ?? 6) - (b.y0 ?? 0);
+    const doorDirX = Math.sin(yaw0);
+    const doorDirZ = Math.cos(yaw0);
+    shopLight.position.set(b.cx, b.y0 + h * 0.45, b.cz);
     shopLight2.position.set(
-      b.cx + Math.sin(yaw0) * (Math.abs(Math.sin(yaw0)) > 0.01 ? 3.4 : 0),
-      b.y0 + 2.4,
-      b.cz + Math.cos(yaw0) * (Math.abs(Math.cos(yaw0)) > 0.01 ? 3.4 : 0),
+      b.cx + doorDirX * (Math.abs(doorDirX) > 0.01 ? 3.4 : 0),
+      b.y0 + h * 0.75,
+      b.cz + doorDirZ * (Math.abs(doorDirZ) > 0.01 ? 3.4 : 0),
     );
     insideShop = b;
     if (!exitBtn) {
@@ -226,6 +245,8 @@ export function setupInteraction({ scene, camera, renderer, controls, showPlaque
         // 真·进店：站到店内看四周
         enterShop(hit);
       } else {
+        // 民居：揭顶飞近看内景（roofGroup 由 house.js 注册；再点空白盖回）
+        if (hit.roofGroup) revealInterior(hit);
         flyToBuilding(hit);
       }
     } else {

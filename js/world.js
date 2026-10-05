@@ -14,6 +14,7 @@ import {
 } from './layout.js';
 
 import { buildHouses } from './builders/house.js';
+import { buildYards } from './builders/yard.js';
 import { buildShops } from './builders/shops.js';
 import { buildTower } from './builders/tower.js';
 import { buildWindmillArea } from './builders/windmill.js';
@@ -152,6 +153,7 @@ export function buildTown(scene) {
 
   // —— 建筑 ——
   updaters.push(...buildHouses(scene));
+  updaters.push(...buildYards(scene)); // 民宅院子（小径/花圃/栅栏/风格点缀）
   updaters.push(...buildShops(scene));
   updaters.push(...buildTower(scene));
   updaters.push(...buildWindmillArea(scene));

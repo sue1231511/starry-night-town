@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildTown } from './world.js';
 import { townClock } from './clock.js';
+import { getBuildings } from './layout.js';
 import { setupInteraction } from './interaction.js';
 import { buildUI } from './ui.js';
 import { buildConsolePanel } from './console.js';
@@ -296,6 +297,7 @@ window.__TOWN__ = {
     trainParked: getTrainState()?.parked ?? null,
   }),
   resetView: () => interaction.resetView(),
+  getBuildings,
   flyTo: (x, y, z, tx, ty, tz) => interaction.flyTo(
     new THREE.Vector3(x, y, z), new THREE.Vector3(tx ?? 0, ty ?? 4, tz ?? -2)),
 };
