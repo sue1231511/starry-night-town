@@ -1,0 +1,188 @@
+// ============================================================
+// builders/nature.js — 自然：树木 / 灌木 / 花丛 / 石头 / 草簇 / 果园
+// ------------------------------------------------------------
+// 散布用固定种子 rng + 排除规则（不压路/不压河/不压建筑）。
+// 树全走体素桶（静态），风摇动画在 schedule（整桶微转代价高，
+// 改用「树冠高光色块」闪烁近似 + 枝头萤火虫制造生命感）。
+// ============================================================
+import { vox } from '../voxel.js';
+import {
+  WORLD, terrainHeight, riverDist, RIVER_HALF_W, onRoad, PLAZA,
+  ORCHARD, HILL_START, makeRng,
+} from '../layout.js';
+
+/** 树基高度：坡上格子阶梯与点采样有落差，下沉半格让树「扎」进地里 */
+function treeBaseY(x, z) {
+  return terrainHeight(x, z) - (z < HILL_START + 2 ? 0.4 : 0.05);
+}
+
+// ------------------------------------------------------------
+// 树
+// ------------------------------------------------------------
+/** 圆蓬树：粗干 + 两团球冠（体素球=三层收腰块） */
+export function roundTree(x, z, s = 1) {
+  const gy = terrainHeight(x, z);
+  vox.pushTransform(x, gy, z, 0);
+  vox.boxC(-0.45 * s, 0, -0.45 * s, 0.9 * s, 2.6 * s, 0.9 * s, 'trunk');
+  vox.boxC(-0.3 * s, 2.6 * s, -0.3 * s, 0.6 * s, 0.8 * s, 0.6 * s, 'trunk'); // 枝
+  vox.boxC(-1.8 * s, 3.2 * s, -1.8 * s, 3.6 * s, 1.6 * s, 3.6 * s, 'treeDeep');
+  vox.boxC(-1.3 * s, 4.6 * s, -1.3 * s, 2.6 * s, 1.2 * s, 2.6 * s, 'treeLite');
+  vox.boxC(-0.7 * s, 5.6 * s, -0.7 * s, 1.4 * s, 0.8 * s, 1.4 * s, 'treeDeep');
+  vox.popTransform();
+  return { x, y: gy, z, top: gy + 5.8 * s };
+}
+
+/** 锥形杉：叠层收尖 */
+export function pineTree(x, z, s = 1) {
+  const gy = terrainHeight(x, z);
+  vox.pushTransform(x, gy, z, 0);
+  vox.boxC(-0.4 * s, 0, -0.4 * s, 0.8 * s, 1.8 * s, 0.8 * s, 'trunk');
+  vox.boxC(-1.7 * s, 1.7 * s, -1.7 * s, 3.4 * s, 1.2 * s, 3.4 * s, 'treeDeep');
+  vox.boxC(-1.25 * s, 2.8 * s, -1.25 * s, 2.5 * s, 1.1 * s, 2.5 * s, 'treeDeep');
+  vox.boxC(-0.85 * s, 3.8 * s, -0.85 * s, 1.7 * s, 1.0 * s, 1.7 * s, 'treeLite');
+  vox.boxC(-0.45 * s, 4.7 * s, -0.45 * s, 0.9 * s, 0.9 * s, 0.9 * s, 'treeDeep');
+  vox.popTransform();
+  return { x, y: gy, z, top: gy + 5.4 * s };
+}
+
+/** 方冠树：像积木的胖树冠（日本枯山水风） */
+export function blockTree(x, z, s = 1) {
+  const gy = terrainHeight(x, z);
+  vox.pushTransform(x, gy, z, 0);
+  vox.boxC(-0.4 * s, 0, -0.4 * s, 0.8 * s, 2.2 * s, 0.8 * s, 'trunk');
+  vox.boxC(-1.6 * s, 2.2 * s, -1.6 * s, 3.2 * s, 2.4 * s, 3.2 * s, 'treeLite');
+  vox.boxC(-1.6 * s, 4.6 * s, -1.6 * s, 3.2 * s, 0.5 * s, 3.2 * s, 'treeDeep');
+  vox.popTransform();
+  return { x, y: gy, z, top: gy + 5.1 * s };
+}
+
+/** 柳树：干 + 下垂条排（河边专用） */
+export function willowTree(x, z) {
+  const gy = terrainHeight(x, z);
+  vox.pushTransform(x, gy, z, 0);
+  vox.boxC(-0.55, 0, -0.55, 1.1, 3.4, 1.1, 'trunk');
+  vox.boxC(-0.4, 3.4, -0.4, 0.8, 0.6, 0.8, 'trunk');
+  vox.boxC(-1.9, 3.9, -1.9, 3.8, 1.4, 3.8, 'treeDeep');
+  // 垂条：四周一圈细长条
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const px = Math.cos(a) * 2.0, pz = Math.sin(a) * 2.0;
+    vox.boxC(px - 0.22, 1.6, pz - 0.22, 0.44, 2.4, 0.44, 'willow');
+    vox.boxC(px * 1.25 - 0.18, 0.9, pz * 1.25 - 0.18, 0.36, 1.6, 0.36, 'willow');
+  }
+  vox.popTransform();
+  return { x, y: gy, z, top: gy + 5.3 };
+}
+
+// ------------------------------------------------------------
+// 小物
+// ------------------------------------------------------------
+function bush(x, z, s = 1) {
+  const gy = terrainHeight(x, z);
+  vox.boxC(x - 0.8 * s, gy, z - 0.8 * s, 1.6 * s, 1.1 * s, 1.6 * s, 'bush');
+  vox.boxC(x - 0.5 * s, gy + 1.1 * s, z - 0.5 * s, 1.0 * s, 0.5 * s, 1.0 * s, 'treeLite');
+}
+
+function flowers(x, z, rng) {
+  const gy = terrainHeight(x, z);
+  const cols = ['flowerRed', 'flowerYel', 'flowerBlu'];
+  const n = 2 + Math.floor(rng() * 3);
+  for (let i = 0; i < n; i++) {
+    const ox = (rng() - 0.5) * 2.4, oz = (rng() - 0.5) * 2.4;
+    vox.boxC(x + ox - 0.22, gy, z + oz - 0.22, 0.45, 0.45, 0.45, cols[Math.floor(rng() * 3)]);
+    vox.boxC(x + ox - 0.12, gy + 0.45, z + oz - 0.12, 0.24, 0.24, 0.24, cols[Math.floor(rng() * 3)]);
+  }
+}
+
+function rock(x, z, rng) {
+  const gy = terrainHeight(x, z);
+  const s = 0.8 + rng() * 1.2;
+  vox.boxC(x - s / 2, gy, z - s / 2, s, s * 0.7, s, rng() < 0.5 ? 'rock' : 'rockDark');
+  if (rng() < 0.4) vox.boxC(x - s * 0.3, gy + s * 0.7, z - s * 0.3, s * 0.5, s * 0.3, s * 0.5, 'rock');
+}
+
+function grassTuft(x, z, rng) {
+  const gy = terrainHeight(x, z);
+  for (let i = 0; i < 3; i++) {
+    const ox = (rng() - 0.5) * 1.2, oz = (rng() - 0.5) * 1.2;
+    vox.boxC(x + ox - 0.15, gy, z + oz - 0.15, 0.3, 0.5 + rng() * 0.4, 0.3, rng() < 0.5 ? 'treeLite' : 'bush');
+  }
+}
+
+// ------------------------------------------------------------
+// 散布
+// ------------------------------------------------------------
+/** 能不能种：不压路/河/广场，且在岛内 */
+function plantable(x, z, margin = 2.5) {
+  if (Math.abs(x) > WORLD.HALF - 4 || Math.abs(z) > WORLD.HALF - 4) return false;
+  if (onRoad(x, z)) return false;
+  if (riverDist(x, z) < RIVER_HALF_W + 2.5) return false;
+  if (Math.abs(x - PLAZA.cx) < PLAZA.half + 2 && Math.abs(z - PLAZA.cz) < PLAZA.half + 2) return false;
+  return true;
+}
+
+/** 与已放物体的最小间距检查 */
+function farFromAll(x, z, placed, minD) {
+  for (const p of placed) {
+    const dx = p.x - x, dz = p.z - z;
+    if (dx * dx + dz * dz < minD * minD) return false;
+  }
+  return true;
+}
+
+export function buildNature(scene, rng) {
+  const treeTops = []; // 树冠信息（萤火虫聚集点，effects 消费）
+
+  // —— 河岸柳树 ×4 ——
+  for (const [wx, wz] of [[-22, 9.5], [-8, 18.5], [12, 9.0], [30, 17.5]]) {
+    treeTops.push(willowTree(wx, wz));
+  }
+
+  // —— 果园（南公园，行列整齐的圆蓬树 + 树下花）——
+  const O = ORCHARD;
+  for (let r = 0; r < O.rows; r++) {
+    for (let c = 0; c < O.cols; c++) {
+      const ox = O.x0 + (c + 0.5) * (O.x1 - O.x0) / O.cols;
+      const oz = O.z0 + (r + 0.5) * (O.z1 - O.z0) / O.rows;
+      treeTops.push(roundTree(ox, oz, 0.75));
+      if ((r + c) % 2 === 0) flowers(ox + 2.2, oz, rng);
+    }
+  }
+
+  // —— 坡上树林（北坡高地的锥形杉为主）——
+  const placed = [];
+  for (let i = 0; i < 46; i++) {
+    const x = (rng() - 0.5) * 2 * (WORLD.HALF - 6);
+    const z = -WORLD.HALF + 4 + rng() * (WORLD.HALF * 0.55);
+    if (!plantable(x, z, 3)) continue;
+    if (!farFromAll(x, z, placed, 4.5)) continue;
+    placed.push({ x, z });
+    treeTops.push(pineTree(x, z, 0.8 + rng() * 0.5));
+  }
+
+  // —— 平地散树（圆蓬/方冠混合，住宅区周围）——
+  for (let i = 0; i < 30; i++) {
+    const x = (rng() - 0.5) * 2 * (WORLD.HALF - 6);
+    const z = -16 + rng() * 60;
+    if (!plantable(x, z, 3)) continue;
+    if (!farFromAll(x, z, placed, 5)) continue;
+    placed.push({ x, z });
+    treeTops.push(rng() < 0.6 ? roundTree(x, z, 0.9 + rng() * 0.4) : blockTree(x, z, 0.9));
+  }
+
+  // —— 灌木 / 花丛 / 石头 / 草簇（细碎填充）——
+  for (let i = 0; i < 60; i++) {
+    const x = (rng() - 0.5) * 2 * (WORLD.HALF - 4);
+    const z = -WORLD.HALF + 4 + rng() * (WORLD.SIZE - 8);
+    if (!plantable(x, z, 1.5)) continue;
+    if (!farFromAll(x, z, placed, 2.2)) continue;
+    placed.push({ x, z });
+    const roll = rng();
+    if (roll < 0.3) bush(x, z, 0.8 + rng() * 0.6);
+    else if (roll < 0.55) flowers(x, z, rng);
+    else if (roll < 0.75) rock(x, z, rng);
+    else grassTuft(x, z, rng);
+  }
+
+  return treeTops;
+}
