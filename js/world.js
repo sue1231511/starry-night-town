@@ -39,6 +39,10 @@ import { buildSeasons } from './systems/seasons.js';
 import { buildWeather } from './systems/weather.js';
 import { buildStory } from './systems/story.js';
 import { buildFireworks } from './systems/fireworks.js';
+import { buildGame } from './systems/game.js';
+import { sfx } from './systems/sound.js';
+import { buildStars } from './builders/stars.js';
+import { buildHiddenCats, spawnParadeCats } from './builders/hiddenCats.js';
 import { townClock } from './clock.js';
 
 // 全局时钟在 clock.js（builders 直接 import），此处 re-export 方便外部取
@@ -163,12 +167,14 @@ export function buildTown(scene) {
   updaters.push(...buildTreehouse(scene, { x: 26, z: -33 }));
 
   // —— 动的东西 ——
+  // 镇猫的注册请求先攒着（游戏层在后面才建，见 buildHiddenCats 的 npcCatHook）
+  const pendingNpcCats = [];
   updaters.push(...buildRailway(scene));
   updaters.push(...buildBoats(scene));
   updaters.push(...buildBalloon(scene));
   updaters.push(...buildNpcs(scene));
-  updaters.push(...buildRoofCat(scene));
-  updaters.push(...buildTownCats(scene));
+  updaters.push(...buildRoofCat(scene, { onCat: (id, g) => pendingNpcCats.push([id, g]) }));
+  updaters.push(...buildTownCats(scene, { onCat: (id, g) => pendingNpcCats.push([id, g]) }));
 
   // —— 系统（顺序重要：sky → daynight → weather 覆盖链）——
   const sky = buildSky(scene);
@@ -199,12 +205,52 @@ export function buildTown(scene) {
   updaters.push(seasons.tick);
 
   // 烟花（控制台按钮 / 午夜自动 / 任务奖励；story 也要用，先建）
-  const fireworks = buildFireworks(scene);
+  // onLaunch/onBurst：程序化音效（WebAudio 合成，见 systems/sound.js）
+  const fireworks = buildFireworks(scene, {
+    onLaunch: () => sfx.fwLaunch(),
+    onBurst: () => sfx.fwBurst(),
+  });
   updaters.push(fireworks.tick);
 
-  // 剧情与触发
-  const story = buildStory({ sky, daynight, fireworks, summonTrain });
+  // 剧情与触发（任务完成配一声上行三音）
+  const story = buildStory({
+    sky, daynight, fireworks, summonTrain,
+    onQuestDone: () => sfx.questDone(),
+  });
   updaters.push(story.tick);
+
+  // —— 游戏层：许愿星 / 猫咪图鉴 / 星光等级（存档在 localStorage）——
+  // 拾取通道：main 里 interaction 建好后 flushPickables 接上（buildTown 先于 interaction）
+  let pickSink = null;
+  const pendingPicks = [];
+  const addPickable = (p) => { if (pickSink) pickSink.add(p); else pendingPicks.push(p); };
+  const removePickable = (id) => {
+    if (pickSink) { pickSink.remove(id); return; }
+    const i = pendingPicks.findIndex((x) => x.id === id);
+    if (i >= 0) pendingPicks.splice(i, 1);
+  };
+
+  const game = buildGame({
+    fireworks, sky,
+    spawnParadeCats: () => updaters.push(...spawnParadeCats(scene)), // Lv3 奖励
+  });
+  updaters.push(game.tick);
+  game.reapplyRewards(); // 读档时补发已解锁的被动奖励
+
+  updaters.push(...buildStars(scene, game, {
+    addPickable, removePickable,
+    onCollect: (def, screenXY) => game.collectStar(def.id, screenXY),
+  }));
+  updaters.push(...buildHiddenCats(scene, game, {
+    addPickable,
+    npcCatHook: (register) => { for (const [id, g] of pendingNpcCats) register(id, g); },
+  }));
+
+  function flushPickables(interaction) {
+    pickSink = { add: interaction.addPickable, remove: interaction.removePickable };
+    for (const p of pendingPicks) pickSink.add(p);
+    pendingPicks.length = 0;
+  }
 
   // 极光自动逻辑：冬夜（20 点后）大概率亮起，天亮淡出；其余季节保持关
   let auroraDecidedDay = -1;
@@ -241,7 +287,8 @@ export function buildTown(scene) {
   return {
     updaters,
     schedule,
-    sky, daynight, weather, seasons, story, fireworks,
+    sky, daynight, weather, seasons, story, fireworks, game,
+    flushPickables,
     stats: () => vox.stats(),
   };
 }

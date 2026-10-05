@@ -8,7 +8,7 @@ import { townClock, SEASONS, SEASON_ZH } from './clock.js';
 import { WEATHERS, WEATHER_ZH } from './systems/weather.js';
 import { getBuildings } from './layout.js';
 
-export function buildConsolePanel({ clock, seasons, weather, story, sky, fireworks, summonTrain, onFlyToBuilding, setPixelHeight, getPixelHeight, statsGetter }) {
+export function buildConsolePanel({ clock, seasons, weather, story, game, sky, fireworks, summonTrain, onFlyToBuilding, setPixelHeight, getPixelHeight, statsGetter }) {
   const root = document.getElementById('ui');
 
   // —— 开关按钮 ——
@@ -68,6 +68,13 @@ export function buildConsolePanel({ clock, seasons, weather, story, sky, firewor
         <div class="con-grid">
           <button class="ui-tg">隐藏界面</button>
           <button class="view-reset">重置视角</button>
+        </div>
+      </section>
+      <section class="con-sec">
+        <div class="con-label">星光进度</div>
+        <div class="con-game-progress"></div>
+        <div class="con-grid">
+          <button class="game-reset">重置收集进度</button>
         </div>
       </section>
       <section class="con-sec">
@@ -208,8 +215,16 @@ export function buildConsolePanel({ clock, seasons, weather, story, sky, firewor
   // —— 刷新 ——
   const questsEl = $('.con-quests');
   const statsEl = $('.con-stats');
+  const gameProgressEl = $('.con-game-progress');
   let refreshTimer = null;
   function refreshSoon() { if (refreshTimer) return; refreshTimer = setTimeout(() => { refreshTimer = null; refreshNow(); }, 120); }
+
+  // —— 重置收集进度：清档刷新（星星会按存档重新摆，最省心的复原方式）——
+  $('.game-reset').addEventListener('click', () => {
+    if (!confirm('清空全部收集进度（星星/猫咪/星光等级）并重新开始？')) return;
+    try { localStorage.removeItem('starville-game-v1'); } catch { /* 隐私模式 */ }
+    location.reload();
+  });
 
   function refreshNow() {
     timeEl.textContent = clock.hhmm();
@@ -233,6 +248,11 @@ export function buildConsolePanel({ clock, seasons, weather, story, sky, firewor
       li.querySelector('.q-state').textContent = q.state === 'done' ? '✓ 完成' : q.state === 'active' ? '→ ' + q.target : '待触发';
       li.querySelector('.q-desc').textContent = q.hintText;
       questsEl.appendChild(li);
+    }
+    // 星光进度（游戏层）
+    if (game) {
+      const p = game.progress();
+      gameProgressEl.textContent = `星 ${p.stars}/${p.starsTotal} · 猫 ${p.cats}/${p.catsTotal} · Lv${p.level} ${p.levelName}（${p.score} 分）`;
     }
     // 调试
     if (statsGetter) {

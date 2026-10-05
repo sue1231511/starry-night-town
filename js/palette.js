@@ -82,6 +82,10 @@ export const PAL = {
   clothC:     '#7aad8a',
   clothD:     '#c4a96a',
   catBlack:   '#2a2c3a',
+  catOrange:  '#d4956a', // 麦田橘猫「麦芒」
+  catWhite:   '#e8e4da', // 树屋白猫「阁楼」
+  catGray:    '#8a8fa8', // 站台灰猫「末班」
+  catCalico:  '#e0b48a', // 稻草人肩三花「稻草」（橘底，白斑用 catWhite 叠）
 };
 
 // 发光色集合：这些颜色默认走「发光材质桶」（emissive）

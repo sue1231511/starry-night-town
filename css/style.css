@@ -754,3 +754,287 @@ html, body {
   .hud { animation: none; }
   .boot-title { animation: none; }
 }
+
+/* ============================================================
+   游戏层 UI：星光 HUD / 星光图鉴 / 飞星动画 / 成就 toast
+   ============================================================ */
+
+/* —— 星光 HUD（时钟下方的三枚 chip）—— */
+.game-hud {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.gh-chip {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper);
+  border: none;
+  color: var(--ink);
+  padding: 6px 9px;
+  cursor: pointer;
+  font-family: "Press Start 2P", "PingFang SC", "Microsoft YaHei", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  box-shadow:
+    0 0 0 2px var(--edge),
+    3px 3px 0 rgba(11, 16, 38, 0.55);
+  transition: box-shadow 0.12s steps(2);
+}
+.gh-chip:hover { box-shadow: 0 0 0 2px var(--accent), 3px 3px 0 rgba(11, 16, 38, 0.55); }
+.gh-stars .gh-ic { color: var(--accent); }
+.gh-cats .gh-ic { color: var(--ink-dim); }
+.gh-stars .gh-ic path { fill: currentColor; }
+.gh-cats .gh-ic ellipse { fill: currentColor; }
+.gh-chip.pulse { animation: gh-pulse 0.5s steps(4); }
+@keyframes gh-pulse {
+  0% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 6px rgba(255, 216, 138, 0.35); }
+  100% { box-shadow: 0 0 0 2px var(--edge), 3px 3px 0 rgba(11, 16, 38, 0.55); }
+}
+/* 音效开关：关时显示斜杠图标 */
+.gh-sound .gh-sound-off { display: none; }
+.gh-sound.muted .gh-sound-on { display: none; }
+.gh-sound.muted .gh-sound-off { display: block; }
+.gh-sound.muted { color: var(--ink-dim); opacity: 0.7; }
+
+/* —— 星光图鉴面板 —— */
+.codex {
+  pointer-events: auto;
+  position: absolute;
+  left: 18px;
+  top: 168px; /* 错开左上 HUD（标题/时钟/星光 chips），打开时仍露出 */
+  bottom: 110px;
+  width: min(320px, calc(100vw - 36px));
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 2px var(--edge),
+    6px 6px 0 rgba(11, 16, 38, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-14px);
+  transition: opacity 0.18s steps(3), transform 0.18s steps(3), visibility 0.18s;
+  z-index: 40;
+}
+.codex.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+.codex-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  box-shadow: 0 2px 0 rgba(232, 240, 255, 0.25);
+}
+.codex-title {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: var(--accent);
+}
+.codex-close {
+  pointer-events: auto;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.codex-close:hover { color: var(--ink); }
+
+.codex-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+}
+.codex-tab {
+  pointer-events: auto;
+  flex: 1;
+  background: rgba(232, 240, 255, 0.06);
+  border: none;
+  border-top: 3px solid transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  padding: 7px 4px;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+.codex-tab.on {
+  color: var(--accent);
+  border-top-color: var(--accent);
+  background: rgba(255, 216, 138, 0.1);
+}
+
+.codex-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-dim) transparent;
+}
+.codex-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(232, 240, 255, 0.05);
+  border-left: 3px solid var(--ink-dim);
+  padding: 8px 10px;
+  color: var(--ink-dim);
+}
+.codex-row.found {
+  border-left-color: var(--accent);
+  background: rgba(255, 216, 138, 0.09);
+  color: var(--ink);
+}
+.codex-ic {
+  flex: 0 0 24px;
+  display: flex;
+  justify-content: center;
+}
+.codex-ic .gl { color: var(--accent); }
+.codex-ic .gl path { fill: currentColor; }
+.codex-ic .dim { color: var(--ink-dim); opacity: 0.6; }
+.codex-name {
+  flex: 0 0 auto;
+  min-width: 64px;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+.codex-hint {
+  flex: 1;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+}
+.codex-foot {
+  padding: 8px 12px;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  color: var(--ink-dim);
+  letter-spacing: 1px;
+  box-shadow: 0 -2px 0 rgba(232, 240, 255, 0.15);
+}
+
+/* 成就 tab 的进度条 */
+.codex-bar {
+  background: rgba(232, 240, 255, 0.05);
+  border-left: 3px solid var(--accent);
+  padding: 10px;
+}
+.codex-bar-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+.codex-bar-track {
+  height: 10px;
+  background: rgba(11, 16, 38, 0.8);
+  box-shadow: 0 0 0 2px rgba(232, 240, 255, 0.25);
+}
+.codex-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s steps(8);
+}
+.codex-bar-next {
+  margin-top: 6px;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  color: var(--ink-dim);
+  letter-spacing: 1px;
+}
+
+/* —— 收集飞星（DOM 动画，从点击处飞向 HUD 星 chip）—— */
+.fly-star {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  color: var(--accent);
+  transform-origin: center;
+  transition: transform 0.62s cubic-bezier(0.3, -0.2, 0.7, 1.1), opacity 0.62s ease-in;
+}
+.fly-star svg path { fill: currentColor; }
+.fly-star svg { filter: drop-shadow(0 0 4px rgba(255, 216, 138, 0.8)); }
+
+/* —— 成就 toast（右下角）—— */
+.ach-toast {
+  position: absolute;
+  right: 18px;
+  bottom: 108px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    5px 5px 0 rgba(11, 16, 38, 0.55);
+  padding: 10px 14px;
+  max-width: min(300px, calc(100vw - 36px));
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s steps(3), transform 0.2s steps(3);
+  z-index: 60;
+}
+.ach-toast.show { opacity: 1; transform: translateY(0); }
+.ach-ic { color: var(--accent); flex: 0 0 auto; }
+.ach-ic path { fill: currentColor; }
+.ach-body { min-width: 0; }
+.ach-title {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+.ach-text {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  letter-spacing: 0.5px;
+}
+
+/* 控制台的星光进度行 */
+.con-game-progress {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  color: var(--ink);
+  letter-spacing: 1px;
+  padding: 2px 0 8px;
+}
+
+/* 小屏适配（游戏层） */
+@media (max-width: 640px) {
+  .game-hud { flex-wrap: wrap; }
+  .gh-chip { font-size: 8px; padding: 5px 7px; }
+  .codex { top: auto; bottom: 110px; max-height: 46vh; }
+  .ach-toast { bottom: 150px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-chip.pulse { animation: none; }
+  .fly-star { transition-duration: 0.01s; }
+}

@@ -157,8 +157,9 @@ export function buildNpcs(scene) {
 
 // ------------------------------------------------------------
 // 散布小镇的猫 ×3（广场 / 码头 / 篝火）：蹲姿 + 尾巴摆 + 呼吸
+// （export：hiddenCats.js 复用同一套猫造型，换花色）
 // ------------------------------------------------------------
-function makeCatAt(scene, x, y, z, rot, seed) {
+export function makeCatAt(scene, x, y, z, rot, seed, colorKey = 'catBlack') {
   const g = new THREE.Group();
   g.position.set(x, y, z);
   g.rotation.y = rot * Math.PI / 180;
@@ -166,41 +167,46 @@ function makeCatAt(scene, x, y, z, rot, seed) {
 
   const body = new THREE.Group();
   g.add(body);
-  dynBoxTo(body, 0, 0.25, 0, 0.7, 0.55, 1.05, 'catBlack');
-  dynBoxTo(body, 0, 0.62, 0.4, 0.5, 0.45, 0.45, 'catBlack');
-  dynBoxTo(body, -0.16, 0.95, 0.4, 0.14, 0.2, 0.1, 'catBlack');
-  dynBoxTo(body, 0.16, 0.95, 0.4, 0.14, 0.2, 0.1, 'catBlack');
+  dynBoxTo(body, 0, 0.25, 0, 0.7, 0.55, 1.05, colorKey);
+  dynBoxTo(body, 0, 0.62, 0.4, 0.5, 0.45, 0.45, colorKey);
+  dynBoxTo(body, -0.16, 0.95, 0.4, 0.14, 0.2, 0.1, colorKey);
+  dynBoxTo(body, 0.16, 0.95, 0.4, 0.14, 0.2, 0.1, colorKey);
   dynBoxTo(body, -0.11, 0.66, 0.63, 0.1, 0.09, 0.05, 'winWarm', { glow: true });
   dynBoxTo(body, 0.11, 0.66, 0.63, 0.1, 0.09, 0.05, 'winWarm', { glow: true });
-  dynBoxTo(body, 0, 0.06, 0.58, 0.3, 0.14, 0.28, 'catBlack');
+  dynBoxTo(body, 0, 0.06, 0.58, 0.3, 0.14, 0.28, colorKey);
   const tail1 = new THREE.Group(); tail1.position.set(0, 0.32, -0.52); body.add(tail1);
-  dynBoxTo(tail1, 0, 0, -0.3, 0.16, 0.16, 0.62, 'catBlack');
+  dynBoxTo(tail1, 0, 0, -0.3, 0.16, 0.16, 0.62, colorKey);
   const tail2 = new THREE.Group(); tail2.position.set(0, 0, -0.6); tail1.add(tail2);
-  dynBoxTo(tail2, 0, 0.1, -0.22, 0.13, 0.13, 0.5, 'catBlack');
+  dynBoxTo(tail2, 0, 0.1, -0.22, 0.13, 0.13, 0.5, colorKey);
 
-  return (dt, t) => {
+  const tickFn = (dt, t) => {
     tail1.rotation.y = Math.sin(t * 1.2 + seed) * 0.5;
     tail2.rotation.y = Math.sin(t * 1.2 + 0.9 + seed) * 0.6;
     const breathe = 1 + Math.sin(t * 1.6 + seed) * 0.035;
     body.scale.set(breathe, breathe, 1);
   };
+  return { tick: tickFn, g };
 }
 
-/** 三只镇猫：喷泉边打盹 / 码头守鱼 / 篝火烤火 */
-export function buildTownCats(scene) {
+/** 三只镇猫：喷泉边打盹 / 码头守鱼 / 篝火烤火
+ *  onCat(id, group)：游戏层注册拾取盒用（隐藏猫在 hiddenCats.js 统一管理） */
+export function buildTownCats(scene, { onCat } = {}) {
   const updaters = [];
   const plazaY = terrainHeight(PLAZA.cx - 5, PLAZA.cz + 4);
-  updaters.push(makeCatAt(scene, PLAZA.cx - 5, plazaY, PLAZA.cz + 4, 140, 1.7));      // 广场猫
+  let c = makeCatAt(scene, PLAZA.cx - 5, plazaY, PLAZA.cz + 4, 140, 1.7);      // 广场猫
+  updaters.push(c.tick); if (onCat) onCat('plaza', c.g);
   const rz1 = riverZ(DOCK.x);
-  updaters.push(makeCatAt(scene, DOCK.x + 1.6, 0.9, rz1 + RIVER_HALF_W - 3.8, -100, 4.2)); // 码头猫
-  updaters.push(makeCatAt(scene, CAMP.fire.x + 2.6, CAMP.groundY, CAMP.fire.z + 2.0, -35, 7.9)); // 篝火猫
+  c = makeCatAt(scene, DOCK.x + 1.6, 0.9, rz1 + RIVER_HALF_W - 3.8, -100, 4.2); // 码头猫
+  updaters.push(c.tick); if (onCat) onCat('dock', c.g);
+  c = makeCatAt(scene, CAMP.fire.x + 2.6, CAMP.groundY, CAMP.fire.z + 2.0, -35, 7.9); // 篝火猫
+  updaters.push(c.tick); if (onCat) onCat('camp', c.g);
   return updaters;
 }
 
 // ------------------------------------------------------------
 // 屋顶猫（蹲在旅馆屋脊，尾巴摆 + 偶尔抬头）
 // ------------------------------------------------------------
-export function buildRoofCat(scene) {
+export function buildRoofCat(scene, { onCat } = {}) {
   const updaters = [];
   const g = new THREE.Group();
   // 旅馆 (x=-12, z=0) 屋脊上方
@@ -230,6 +236,7 @@ export function buildRoofCat(scene) {
     // 偶尔抬头看月亮（缓慢点头周期）
     g.children[1].rotation.x = 0.15 + 0.25 * (0.5 + 0.5 * Math.sin(t * 0.23));
   });
+  if (onCat) onCat('roof', g);
 
   return updaters;
 }

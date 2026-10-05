@@ -240,6 +240,9 @@ export function buildSky(scene) {
   let meteorState = { active: false, t: 0, nextAt: 18 + rng() * 20, dur: 1.1 };
   // 流星雨（剧情触发）：burstUntil 内每颗流星结束立即接下一颗
   let burstUntil = -1;
+  // 平时流星间隔倍率（星光 Lv4「流星之夜」调低，流星更勤）
+  let meteorRate = 1;
+  function setMeteorRate(m) { meteorRate = Math.max(0.15, m); }
 
   /** 剧情流星雨：seconds 秒内流星密集连发 */
   function burstMeteors(count = 12, seconds = 4) {
@@ -377,8 +380,8 @@ export function buildSky(scene) {
       if (meteorState.t >= meteorState.dur) {
         meteor.visible = false;
         meteorState.active = false;
-        // 流星雨中：连发；平时：长间隔
-        meteorState.nextAt = (clockT < burstUntil) ? 0.25 + rng() * 0.5 : 14 + rng() * 24;
+        // 流星雨中：连发；平时：长间隔（受 meteorRate 影响）
+        meteorState.nextAt = (clockT < burstUntil) ? 0.25 + rng() * 0.5 : (14 + rng() * 24) * meteorRate;
       }
     }
   }
@@ -392,6 +395,7 @@ export function buildSky(scene) {
     sunDisc,
     clouds,
     burstMeteors,
+    setMeteorRate,
     setAurora,
     auroraOn,
   };

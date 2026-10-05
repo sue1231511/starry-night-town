@@ -12,8 +12,12 @@ import { makeRng } from '../layout.js';
 const COLORS = [0xffd88a, 0xff6a5a, 0x7ad4a0, 0x7a9ad4, 0xffb85c, 0xe88ab0, 0xaad4ff];
 const MAX_P = 260; // 全池上限
 
-export function buildFireworks(scene, { onLaunch } = {}) {
+export function buildFireworks(scene, { onLaunch, onBurst } = {}) {
   const rng = makeRng(31415);
+  // 星光 Lv2 解锁「金辉烟花」：开金主题后部分烟花走纯金系
+  let golden = false;
+  function setGolden(on) { golden = !!on; }
+  const GOLDENS = [0xffd88a, 0xffe8b0, 0xffb85c, 0xf4f7ff, 0xffc98a];
 
   const _m = new THREE.Matrix4();
   const _q = new THREE.Quaternion();
@@ -38,7 +42,7 @@ export function buildFireworks(scene, { onLaunch } = {}) {
   // 粒子状态池
   const parts = new Array(MAX_P).fill(null).map(() => ({ alive: false }));
   let cursor = 0;
-  function spawn(x, y, z, vx, vy, vz, color, life, size) {
+  function emit(x, y, z, vx, vy, vz, color, life, size) {
     const p = parts[cursor];
     cursor = (cursor + 1) % MAX_P;
     p.alive = true;
@@ -58,7 +62,9 @@ export function buildFireworks(scene, { onLaunch } = {}) {
       x: cx + (rng() - 0.5) * 6, z: cz + (rng() - 0.5) * 6,
       y: 2, vy: 16 + rng() * 5,
       burstY: 20 + rng() * 10,
-      color: COLORS[Math.floor(rng() * COLORS.length)],
+      color: golden && rng() < 0.45
+        ? GOLDENS[Math.floor(rng() * GOLDENS.length)]
+        : COLORS[Math.floor(rng() * COLORS.length)],
     });
     if (onLaunch) onLaunch();
   }
@@ -78,15 +84,16 @@ export function buildFireworks(scene, { onLaunch } = {}) {
       const a = rng() * Math.PI * 2;
       const s = Math.sqrt(1 - u * u);
       const speed = 5.5 + rng() * 4;
-      spawn(x, y, z, s * Math.cos(a) * speed, u * speed, s * Math.sin(a) * speed * 0.7,
+      emit(x, y, z, s * Math.cos(a) * speed, u * speed, s * Math.sin(a) * speed * 0.7,
         color, 1.6 + rng() * 0.8, 0.5 + rng() * 0.3);
     }
     // 少量金色余烬（慢速、更久）
     for (let i = 0; i < 8; i++) {
       const a = rng() * Math.PI * 2;
-      spawn(x, y, z, Math.cos(a) * 2.2, 2 + rng() * 2, Math.sin(a) * 1.6,
+      emit(x, y, z, Math.cos(a) * 2.2, 2 + rng() * 2, Math.sin(a) * 1.6,
         0xffd88a, 2.4 + rng(), 0.36);
     }
+    if (typeof onBurst === 'function') onBurst();
   }
 
   function tick(dt, t) {
@@ -96,7 +103,7 @@ export function buildFireworks(scene, { onLaunch } = {}) {
       const dy = r.vy * dt;
       r.y += dy;
       // 尾迹小粒子
-      if (rng() < 0.7) spawn(r.x, r.y, r.z, (rng() - 0.5) * 0.8, -1.2, (rng() - 0.5) * 0.8, 0xffe8c0, 0.5, 0.3);
+      if (rng() < 0.7) emit(r.x, r.y, r.z, (rng() - 0.5) * 0.8, -1.2, (rng() - 0.5) * 0.8, 0xffe8c0, 0.5, 0.3);
       if (r.y >= r.burstY) {
         burst(r.x, r.y, r.z, r.color);
         rockets.splice(i, 1);
@@ -130,5 +137,5 @@ export function buildFireworks(scene, { onLaunch } = {}) {
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }
 
-  return { tick, launch, show };
+  return { tick, launch, show, setGolden };
 }

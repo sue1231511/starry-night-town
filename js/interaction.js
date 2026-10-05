@@ -151,6 +151,27 @@ export function setupInteraction({ scene, camera, renderer, controls, showPlaque
     flyTo(target, new THREE.Vector3(cx, (hit.y0 + hit.y1) / 2, cz));
   }
 
+  // —— 拾取物注册表（星星/猫：Box3 手动相交，同建筑判定路数）——
+  const pickables = new Map(); // id -> { id, box, onPick }
+  function addPickable(p) { pickables.set(p.id, p); }
+  function removePickable(id) { pickables.delete(id); }
+  function clearPickables() { pickables.clear(); }
+
+  /** 单击拾取：星星/猫（命中返回 true，优先于收名牌） */
+  function raycastPickables(ray, e) {
+    let best = null, bestT = Infinity;
+    const hitP = new THREE.Vector3();
+    for (const p of pickables.values()) {
+      if (ray.intersectBox(p.box, hitP)) {
+        const t = hitP.distanceTo(ray.origin);
+        if (t < bestT) { bestT = t; best = p; }
+      }
+    }
+    if (!best) return false;
+    best.onPick({ x: e.clientX, y: e.clientY });
+    return true;
+  }
+
   // —— 指针事件 ——
   const dom = renderer.domElement;
   let downX = 0, downY = 0, downT = 0;
@@ -180,6 +201,12 @@ export function setupInteraction({ scene, camera, renderer, controls, showPlaque
     if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
     if (performance.now() - downT > 400) return;
     if (e.button !== 0) return;
+    // 先试拾取物（星星/猫），命中优先；没中再收名牌
+    const rect = dom.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(new THREE.Vector2(nx, ny), camera);
+    if (raycastPickables(raycaster.ray, e)) return;
     // 单击空白处收起名牌（双击判定放 dblclick）
     hidePlaque();
   });
@@ -243,5 +270,5 @@ export function setupInteraction({ scene, camera, renderer, controls, showPlaque
     // 想看全景请拖拽，或点图鉴/重置按钮飞行。
   }
 
-  return { tick, resetView, flyTo, flyToBuilding, enterShop, exitShop, setKeyboardHook: (fn) => { keyboardEnabledRef = fn; }, isInside: () => !!insideShop };
+  return { tick, resetView, flyTo, flyToBuilding, enterShop, exitShop, setKeyboardHook: (fn) => { keyboardEnabledRef = fn; }, isInside: () => !!insideShop, addPickable, removePickable, clearPickables };
 }

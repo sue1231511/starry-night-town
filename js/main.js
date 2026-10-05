@@ -175,6 +175,10 @@ const interaction = setupInteraction({
 });
 // 进店时暂停 WASD 平移（防止人还在店里地图跑了）
 interaction.setKeyboardHook((on) => { keyboardEnabled = on; });
+// 游戏层拾取通道接上（星星/猫的 Box3 在 buildTown 里攒着）
+town.flushPickables(interaction);
+// 星光图鉴 / HUD 计数 / 音效开关绑定
+ui.bindGame(town.game);
 // 图鉴点击 → 飞向建筑
 window.addEventListener('guide-fly', (e) => interaction.flyToBuilding(e.detail));
 // 控制台「重置视角」
@@ -186,6 +190,7 @@ const con = buildConsolePanel({
   seasons: town.seasons,
   weather: town.weather,
   story: town.story,
+  game: town.game,
   sky: town.sky,
   fireworks: town.fireworks,
   summonTrain,
@@ -269,6 +274,7 @@ window.__TOWN__ = {
   weather: town.weather,
   seasons: town.seasons,
   story: town.story,
+  game: town.game,
   daynight: town.daynight,
   sky: town.sky,
   fireworks: town.fireworks,
